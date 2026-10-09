@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Typ wat je vrouw zegt en krijg eerlijke, onderbouwde tegenargumenten.">
+<title>Met Alle Respect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: two columns, input left, result right. A balance scale shows who is right. */
+:root {
+  --bg: #f3f5f2;
+  --surface: #ffffff;
+  --ink: #1c2826;
+  --muted: #5b6965;
+  --line: #d9dfdb;
+  --her: #2f7468;
+  --her-soft: #e1efeb;
+  --you: #7a3466;
+  --you-soft: #f3e5ef;
+  --warn: #9a5b12;
+  --focus: #2f7468;
+  --display: "Gloock", "Georgia", "Times New Roman", serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131a19; --surface: #1b2423; --ink: #e6ece9; --muted: #9aa8a4; --line: #2e3a38;
+    --her: #6cc0b0; --her-soft: #1d3330; --you: #d790c3; --you-soft: #36222f; --warn: #e3a95c; --focus: #6cc0b0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131a19; --surface: #1b2423; --ink: #e6ece9; --muted: #9aa8a4; --line: #2e3a38;
+  --her: #6cc0b0; --her-soft: #1d3330; --you: #d790c3; --you-soft: #36222f; --warn: #e3a95c; --focus: #6cc0b0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; }
+
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 32px; margin-bottom: 28px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1; margin: 0; letter-spacing: -0.01em; }
+h1 em { font-style: normal; color: var(--you); }
+.tagline { margin: 8px 0 0; color: var(--muted); max-width: 52ch; }
+.label { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+form { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 18px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+@media (max-width: 860px) { form { position: static; } }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-weight: 600; font-size: 0.95rem; }
+.field .hint { font-size: 0.82rem; color: var(--muted); }
+textarea, input[type="text"] { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; resize: vertical; width: 100%; }
+textarea:focus-visible, input:focus-visible, button:focus-visible, .chip input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+#stelling { min-height: 96px; font-size: 1.02rem; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.chip span { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.9rem; cursor: pointer; }
+.chip input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid transparent; padding: 10px 16px; font-weight: 600; }
+.primary { background: var(--you); color: #fff; }
+.primary:disabled { opacity: 0.55; cursor: progress; }
+.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.ghost:hover { border-color: var(--muted); }
+.small { padding: 6px 10px; font-size: 0.85rem; }
+
+.status { min-height: 1.4em; font-size: 0.9rem; color: var(--muted); }
+.status.err { color: var(--warn); }
+
+/* Result */
+.result { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.result-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.badge { font-family: var(--mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 4px; background: var(--you-soft); color: var(--you); }
+.quote { font-family: var(--display); font-size: clamp(1.3rem, 2.6vw, 1.75rem); line-height: 1.25; margin: 4px 0 0; text-wrap: balance; }
+
+.scale { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+.scale-ends { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.92rem; }
+.scale-ends .her { color: var(--her); }
+.scale-ends .you { color: var(--you); }
+.bar { position: relative; height: 12px; border-radius: 999px; background: var(--you-soft); overflow: hidden; }
+.bar-fill { position: absolute; inset: 0 auto 0 0; background: var(--her); border-radius: 999px 0 0 999px; transition: width 600ms ease; }
+.ticks { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.verdict { margin: 0; font-size: 1.02rem; }
+
+.block { display: flex; flex-direction: column; gap: 8px; }
+.block h2 { font-family: var(--display); font-weight: 400; font-size: 1.35rem; margin: 0; text-wrap: balance; }
+.block p { margin: 0; max-width: 68ch; }
+.ack { background: var(--her-soft); border-radius: 12px; padding: 16px 18px; }
+.ack h2 { color: var(--her); }
+
+.args { display: grid; gap: 12px; }
+.arg { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.arg-top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; justify-content: space-between; }
+.arg h3 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+.pill.sterk { border-color: var(--you); color: var(--you); }
+.pill.zwak { border-style: dashed; }
+.arg .basis { font-size: 0.92rem; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; }
+
+.say { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+.say .label { color: inherit; opacity: 0.7; }
+.say blockquote { margin: 0; font-family: var(--display); font-size: 1.3rem; line-height: 1.35; }
+.say button { align-self: flex-start; background: var(--bg); color: var(--ink); }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.note { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.note.pitfall .label { color: var(--warn); }
+.checks { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 4px; }
+
+.fineprint { font-size: 0.82rem; color: var(--muted); margin: 0; max-width: 70ch; }
+
+.history { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.history ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.history button { width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 0; font-weight: 500; color: var(--ink); display: flex; justify-content: space-between; gap: 12px; }
+.history button span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.history time { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); flex: none; }
+
+.keybox { border-top: 1px solid var(--line); padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.keybox p { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.keybox a { color: var(--her); }
+.keyrow { display: flex; gap: 8px; }
+.keyrow input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+.thinking { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+.dots span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--you); margin-right: 4px; animation: pulse 1.2s infinite ease-in-out; }
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dots span { animation: none; opacity: 0.7; } .bar-fill { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Met <em>alle</em> respect</h1>
+      <p class="tagline">Typ wat je vrouw zegt. Je krijgt eerlijke, onderbouwde tegenargumenten, plus wat ze wél goed ziet. Heeft ze gewoon gelijk? Dan hoor je dat ook.</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <form id="form" autocomplete="off">
+      <div class="field">
+        <label for="stelling">Wat zegt ze?</label>
+        <textarea id="stelling" required placeholder="Bijv.: We moeten de verwarming 's nachts helemaal uitzetten."></textarea>
+      </div>
+      <div class="field">
+        <label for="context">Context <span class="hint">(optioneel)</span></label>
+        <input type="text" id="context" placeholder="Situatie, huis, kinderen, budget…">
+      </div>
+      <div class="field">
+        <label for="standpunt">Wat vind jij? <span class="hint">(optioneel)</span></label>
+        <input type="text" id="standpunt" placeholder="Jouw eigen idee, als je dat al hebt">
+      </div>
+      <fieldset class="field" style="border:0;padding:0;margin:0">
+        <legend class="label" style="margin-bottom:8px">Toon</legend>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="toon" id="toon-zacht" value="zacht en warm" checked><span>Zacht</span></label>
+          <label class="chip"><input type="radio" name="toon" id="toon-zakelijk" value="zakelijk en to the point"><span>Zakelijk</span></label>
+          <label class="chip"><input type="radio" name="toon" id="toon-humor" value="luchtig, met een vleugje humor"><span>Met humor</span></label>
+        </div>
+      </fieldset>
+      <div class="actions">
+        <button type="submit" class="primary" id="go">Onderbouw mijn tegenspraak</button>
+        <button type="button" class="ghost" id="stop" hidden>Stop</button>
+      </div>
+      <div class="status" id="status" role="status"></div>
+      <div class="keybox" id="keybox" hidden>
+        <label class="label" for="apikey">Anthropic API-sleutel</label>
+        <div class="keyrow">
+          <input type="password" id="apikey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+          <button type="button" class="ghost small" id="savekey">Bewaar</button>
+        </div>
+        <p id="keynote">Nodig omdat deze pagina niet in Claude draait. De sleutel blijft alleen in deze browser en gaat rechtstreeks naar Anthropic. Een sleutel maak je aan op <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.</p>
+      </div>
+      <div class="history" id="history" hidden>
+        <span class="label">Eerdere discussies</span>
+        <ul id="history-list"></ul>
+      </div>
+    </form>
+
+    <section class="result" id="result" aria-live="polite"></section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const form = $("form"), go = $("go"), stopBtn = $("stop"), statusEl = $("status"), out = $("result");
+  const HKEY = "mar-history-v1";
+  let sample = null, ctl = null, blocked = false;
+
+  const EXAMPLE = {
+    input: {
+      stelling: "We moeten de verwarming 's nachts helemaal uitzetten, dat scheelt een hoop geld.",
+      context: "Tussenwoning uit 1985, cv-ketel op gas, redelijk geïsoleerd.",
+      standpunt: "Ik denk dat 15 graden beter is dan helemaal uit."
+    },
+    result: {
+      haar_gelijk: 60,
+      oordeel: "Ze heeft gelijk dat 's nachts lager zetten geld bespaart. Helemaal uitzetten levert ten opzichte van een paar graden lager weinig extra op, en heeft nadelen.",
+      erkenning: "Bij een gasketel bespaart een lagere nachttemperatuur echt energie: hoe kleiner het verschil tussen binnen en buiten, hoe minder warmte er weglekt. Haar idee om 's nachts niet door te stoken klopt.",
+      argumenten: [
+        { titel: "Het huis koelt niet ver af", uitleg: "In een redelijk geïsoleerde woning zakt de temperatuur 's nachts maar een paar graden. Of de thermostaat nu op 15 staat of uit, de ketel slaat dan nauwelijks aan.", onderbouwing: "Warmteverlies hangt af van het temperatuurverschil met buiten. Komt het huis vanzelf niet onder de 15 graden, dan levert 'uit' tegenover '15' vrijwel niets extra op.", soort: "logica", sterkte: "sterk" },
+        { titel: "Opwarmen kost ook energie", uitleg: "Hoe verder het huis is afgekoeld, hoe langer de ketel 's ochtends op vol vermogen moet draaien.", onderbouwing: "Dit maakt de besparing kleiner, maar heft hem bij een gasketel meestal niet helemaal op. Het argument is dus maar deels waar.", soort: "feit", sterkte: "redelijk" },
+        { titel: "Kou geeft sneller vocht", uitleg: "Koude muren in slaapkamers en badkamer vergroten de kans op condens en schimmel.", onderbouwing: "Een gangbaar advies is om de nachttemperatuur niet ver onder de 15 graden te laten zakken. Hoe groot het risico is, hangt af van ventilatie en isolatie.", soort: "praktijk", sterkte: "redelijk" }
+      ],
+      zin: "Je hebt gelijk dat we 's nachts niet hoeven te stoken. Zullen we hem op 15 zetten in plaats van uit? Dan besparen we bijna hetzelfde en is het 's ochtends sneller warm.",
+      vraag: "Gaat het je vooral om de energierekening, of slaap je ook liever koel?",
+      valkuil: "Begin niet met 'dat klopt niet'. Ze heeft grotendeels gelijk; jullie verschillen maar een paar graden.",
+      nachecken: [
+        "Hoe ver zakt de temperatuur als de verwarming 's nachts uit staat? Kijk een paar ochtenden op de thermostaat.",
+        "Heeft jullie thermostaat een klokprogramma of nachtstand?"
+      ]
+    }
+  };
+
+  // ---- storage (per-viewer convenience only) ----
+  function loadHistory() { try { return JSON.parse(localStorage.getItem(HKEY) || "[]"); } catch { return []; } }
+  function saveHistory(list) { try { localStorage.setItem(HKEY, JSON.stringify(list.slice(0, 8))); } catch {} }
+  function renderHistory() {
+    const list = loadHistory(), box = $("history"), ul = $("history-list");
+    ul.replaceChildren();
+    box.hidden = list.length === 0;
+    list.forEach((item) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      const s = document.createElement("span"); s.textContent = item.input.stelling;
+      const t = document.createElement("time"); t.textContent = new Date(item.at).toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+      b.append(s, t);
+      b.onclick = () => { fillForm(item.input); render(item.result, item.input, false); };
+      li.append(b); ul.append(li);
+    });
+  }
+
+  // ---- helpers ----
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const str = (v) => (typeof v === "string" ? v.trim() : "");
+  function fillForm(i) { $("stelling").value = i.stelling || ""; $("context").value = i.context || ""; $("standpunt").value = i.standpunt || ""; }
+  function setStatus(msg, isErr) { statusEl.textContent = msg || ""; statusEl.classList.toggle("err", !!isErr); }
+
+  // ---- render ----
+  function render(r, input, isExample) {
+    out.replaceChildren();
+    const pct = Math.max(0, Math.min(100, Math.round(Number(r.haar_gelijk) || 0)));
+
+    const head = el("div", "result-head");
+    const hl = el("div");
+    hl.append(el("span", "label", "Haar stelling"));
+    hl.append(el("p", "quote", "“" + str(input.stelling) + "”"));
+    head.append(hl);
+    if (isExample) head.append(el("span", "badge", "Voorbeeld"));
+    out.append(head);
+
+    // balance
+    const scale = el("div", "scale");
+    const ends = el("div", "scale-ends");
+    ends.append(el("span", "her", "Zij heeft gelijk · " + pct + "%"), el("span", "you", (100 - pct) + "% · Jij hebt een punt"));
+    const bar = el("div", "bar"); bar.setAttribute("role", "img"); bar.setAttribute("aria-label", "Zij " + pct + " procent, jij " + (100 - pct) + " procent");
+    const fill = el("div", "bar-fill"); fill.style.width = "50%"; bar.append(fill);
+    const ticks = el("div", "ticks"); ["0", "25", "50", "75", "100"].forEach((t) => ticks.append(el("span", null, t)));
+    scale.append(ends, bar, ticks, el("p", "verdict", str(r.oordeel)));
+    out.append(scale);
+    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = pct + "%"; }));
+
+    // acknowledgement
+    if (str(r.erkenning)) {
+      const ack = el("div", "block ack");
+      ack.append(el("h2", null, "Waar ze gelijk in heeft"), el("p", null, str(r.erkenning)));
+      out.append(ack);
+    }
+
+    // arguments
+    const args = Array.isArray(r.argumenten) ? r.argumenten : [];
+    if (args.length) {
+      const blk = el("div", "block");
+      blk.append(el("h2", null, "Je tegenargumenten"));
+      const list = el("div", "args");
+      args.forEach((a) => {
+        const card = el("article", "arg");
+        const top = el("div", "arg-top");
+        top.append(el("h3", null, str(a.titel)));
+        const pills = el("div", "pills");
+        const sterkte = str(a.sterkte).toLowerCase();
+        if (sterkte) pills.append(el("span", "pill " + sterkte, sterkte));
+        if (str(a.soort)) pills.append(el("span", "pill", str(a.soort)));
+        top.append(pills);
+        card.append(top, el("p", null, str(a.uitleg)));
+        if (str(a.onderbouwing)) card.append(el("p", "basis", str(a.onderbouwing)));
+        list.append(card);
+      });
+      blk.append(list);
+      out.append(blk);
+    }
+
+    // what to say
+    if (str(r.zin)) {
+      const say = el("div", "say");
+      say.append(el("span", "label", "Zo zeg je het"));
+      const bq = el("blockquote", null, str(r.zin));
+      const copy = el("button", "small", "Kopieer");
+      copy.type = "button";
+      copy.onclick = () => {
+        const done = () => { copy.textContent = "Gekopieerd"; setTimeout(() => (copy.textContent = "Kopieer"), 1600); };
+        try {
+          navigator.clipboard.writeText(str(r.zin)).then(done, () => selectText(bq));
+        } catch { selectText(bq); }
+      };
+      say.append(bq, copy);
+      out.append(say);
+    }
+
+    // question + pitfall
+    const two = el("div", "two");
+    if (str(r.vraag)) {
+      const q = el("div", "note"); q.append(el("span", "label", "Stel liever eerst deze vraag"), el("p", null, str(r.vraag))); two.append(q);
+    }
+    if (str(r.valkuil)) {
+      const p = el("div", "note pitfall"); p.append(el("span", "label", "Valkuil"), el("p", null, str(r.valkuil))); two.append(p);
+    }
+    if (two.children.length) out.append(two);
+
+    const checks = Array.isArray(r.nachecken) ? r.nachecken.map(str).filter(Boolean) : [];
+    if (checks.length) {
+      const n = el("div", "note");
+      n.append(el("span", "label", "Even nachecken"));
+      const ul = el("ul", "checks"); checks.forEach((c) => ul.append(el("li", null, c)));
+      n.append(ul); out.append(n);
+    }
+
+    out.append(el("p", "fineprint", "Claude zoekt niet live op internet. Feiten en cijfers zijn algemene kennis; controleer ze bij twijfel. Het percentage is een inschatting, geen scheidsrechter."));
+  }
+
+  function selectText(node) {
+    const range = document.createRange(); range.selectNodeContents(node);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  }
+
+  function renderThinking() {
+    out.replaceChildren();
+    const t = el("div", "thinking");
+    const d = el("span", "dots"); d.append(el("span"), el("span"), el("span"));
+    t.append(d, el("span", null, "Claude weegt de argumenten af…"));
+    out.append(t);
+  }
+
+  // ---- prompt ----
+  function buildPrompt(i) {
+    return [
+      "Je helpt een man om respectvol en goed onderbouwd tegengas te geven aan iets wat zijn vrouw zegt. Het doel is een beter gesprek, niet winnen.",
+      "",
+      "Regels:",
+      "- Schrijf in natuurlijk, helder Nederlands. Toon: " + i.toon + ".",
+      "- Wees eerlijk. Heeft zij grotendeels gelijk, zeg dat dan duidelijk en zet haar_gelijk hoog. Geef dan alsnog de beste tegenargumenten, maar markeer ze eerlijk als 'zwak' of 'redelijk'.",
+      "- Begin met wat er klopt aan haar standpunt (sterkste versie van haar argument).",
+      "- Onderbouw elk tegenargument met logica, algemeen bekende feiten of praktijkervaring. Verzin geen studies, bronnen, namen of precieze cijfers. Ben je ergens niet zeker van, zeg dat.",
+      "- Geen manipulatie, geen sarcasme, geen kleinerende taal, geen 'je bent emotioneel'. Zij is een gelijkwaardige gesprekspartner.",
+      "- Gaat het eigenlijk over gevoelens of behoeften in plaats van feiten, benoem dat in 'valkuil' of 'vraag'.",
+      "- 'zin' is één tot drie zinnen die hij letterlijk kan zeggen, in de ik-vorm, tegen haar (je/jij).",
+      "",
+      "Wat zij zegt: " + i.stelling,
+      i.context ? "Context: " + i.context : "",
+      i.standpunt ? "Wat hij zelf vindt: " + i.standpunt : "",
+      "",
+      "Antwoord met alleen één JSON-object in deze vorm:",
+      '{"haar_gelijk": 0-100 (geheel getal: hoeveel gelijk zij volgens jou heeft), "oordeel": "1-2 zinnen eerlijk eindoordeel", "erkenning": "wat er klopt aan haar punt", "argumenten": [{"titel": "kort", "uitleg": "1-2 zinnen", "onderbouwing": "waarom dit klopt of waar het op rust", "soort": "feit|logica|praktijk|waarden", "sterkte": "sterk|redelijk|zwak"}] (2 tot 4 stuks), "zin": "wat hij kan zeggen", "vraag": "een oprecht nieuwsgierige vraag aan haar", "valkuil": "wat hij beter niet kan zeggen of doen", "nachecken": ["1 tot 3 dingen om te controleren"]}'
+    ].filter((l) => l !== "").join("\n");
+  }
+
+  const ERR = {
+    not_granted: "Je hebt deze app geen toegang tot Claude gegeven. Herlaad de pagina om het opnieuw toe te staan.",
+    sampling_disabled: "Claude is niet beschikbaar voor dit account.",
+    rate_limited: "Even te veel vragen achter elkaar. Probeer het over een minuut opnieuw.",
+    session_expired: "Je sessie is verlopen. Log opnieuw in bij Claude.",
+    refused: "Claude wil hier niet op ingaan. Probeer de stelling anders te formuleren.",
+    invalid_json: "Het antwoord kwam niet goed door. Probeer het nog eens.",
+    prompt_too_large: "De tekst is te lang. Kort hem wat in.",
+    empty_completion: "Er kwam geen antwoord. Formuleer de stelling iets concreter.",
+    no_key: "Vul eerst je Anthropic API-sleutel in en klik op Bewaar.",
+    bad_key: "Deze API-sleutel werkt niet. Controleer hem op console.anthropic.com."
+  };
+
+  // ---- direct API (when not running inside Claude) ----
+  const KKEY = "mar-apikey-v1";
+  const getKey = () => { try { return localStorage.getItem(KKEY) || ""; } catch { return ""; } };
+  function parseJson(text) {
+    try { return JSON.parse(text); } catch {}
+    const a = text.indexOf("{"), b = text.lastIndexOf("}");
+    if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch {} }
+    throw { code: "invalid_json" };
+  }
+  async function askApi(prompt, signal) {
+    const key = getKey();
+    if (!key) throw { code: "no_key" };
+    let res;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        signal,
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": key,
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "server-side-fallback-2026-07-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-opus-5-5",
+          max_tokens: 16000,
+          fallbacks: "default",
+          output_config: { effort: "medium" },
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "upstream_error" };
+    }
+    if (res.status === 401 || res.status === 403) throw { code: "bad_key" };
+    if (res.status === 429) throw { code: "rate_limited" };
+    if (!res.ok) throw { code: "upstream_error" };
+    const msg = await res.json();
+    if (msg.stop_reason === "refusal") throw { code: "refused" };
+    const text = (msg.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
+    if (!text.trim()) throw { code: "empty_completion" };
+    return parseJson(text);
+  }
+  function showKeybox() {
+    $("keybox").hidden = false;
+    $("apikey").value = getKey();
+  }
+  $("savekey").addEventListener("click", () => {
+    const v = $("apikey").value.trim();
+    try { v ? localStorage.setItem(KKEY, v) : localStorage.removeItem(KKEY); } catch {}
+    setStatus(v ? "Sleutel bewaard in deze browser." : "Sleutel verwijderd.");
+  });
+
+  // ---- submit ----
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = {
+      stelling: $("stelling").value.trim(),
+      context: $("context").value.trim(),
+      standpunt: $("standpunt").value.trim(),
+      toon: (form.querySelector('input[name="toon"]:checked') || {}).value || "zacht en warm"
+    };
+    if (!input.stelling) { setStatus("Typ eerst wat ze zegt.", true); $("stelling").focus(); return; }
+    if (!sample && !getKey()) { showKeybox(); setStatus(ERR.no_key, true); $("apikey").focus(); return; }
+
+    ctl = new AbortController();
+    go.disabled = true; stopBtn.hidden = false;
+    setStatus("Dit duurt meestal 10 tot 40 seconden.");
+    renderThinking();
+    try {
+      const r = sample
+        ? await sample.json(buildPrompt(input), { signal: ctl.signal, cache: false })
+        : await askApi(buildPrompt(input), ctl.signal);
+      if (!r || typeof r !== "object" || !Array.isArray(r.argumenten)) throw { code: "invalid_json" };
+      render(r, input, false);
+      setStatus("");
+      const list = loadHistory().filter((h) => h.input.stelling !== input.stelling);
+      list.unshift({ at: Date.now(), input, result: r });
+      saveHistory(list); renderHistory();
+    } catch (err) {
+      const code = err && err.code;
+      if (code === "cancelled") { setStatus("Gestopt."); render(EXAMPLE.result, EXAMPLE.input, true); }
+      else { setStatus(ERR[code] || "Er ging iets mis met de verbinding. Probeer het opnieuw.", true); out.replaceChildren(); }
+      if (code === "not_granted" || code === "sampling_disabled") blocked = true;
+    } finally {
+      go.disabled = blocked;
+      stopBtn.hidden = true; ctl = null;
+    }
+  });
+  stopBtn.addEventListener("click", () => ctl && ctl.abort());
+
+  // ---- boot ----
+  fillForm(EXAMPLE.input);
+  render(EXAMPLE.result, EXAMPLE.input, true);
+  renderHistory();
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("sample").then((s) => { sample = s; if (!s) showKeybox(); }, showKeybox);
+  } else {
+    showKeybox();
+  }
+})();
+</script>
+</body>
+</html>

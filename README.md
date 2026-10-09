@@ -1,6 +1,6 @@
 # Met alle respect
 
-Typ wat je vrouw zegt en krijg eerlijke, onderbouwde tegenargumenten. De app laat ook zien waar ze gelijk in heeft, schat in wie het meest gelijk heeft, en geeft een zin die je zo kunt zeggen.
+Typ wat je vrouw, man, kind, collega of ouders zeggen en krijg eerlijke, onderbouwde tegenargumenten. De app laat ook zien waar de ander gelijk in heeft, schat in wie het meest gelijk heeft, en geeft een zin die je zo kunt zeggen.
 
 ## Gebruik
 
@@ -28,5 +28,5 @@ Met de tussenserver kan iedereen de app gebruiken zonder eigen sleutel. Alle vra
 
 **Bescherming tegen misbruik**
 - De server accepteert alleen verzoeken vanaf `https://joris-git.github.io` (aan te passen met de variabele `ALLOWED_ORIGIN`).
-- De server bouwt de vraag aan Claude zelf en accepteert alleen een stelling van maximaal 1000 tekens. Hij is dus niet bruikbaar als algemene Claude-toegang.
+- De server bouwt de vraag aan Claude zelf en accepteert alleen een stelling van maximaal 1000 tekens en een vaste keuze uit tonen en personen. Hij is dus niet bruikbaar als algemene Claude-toegang.
 - Stel in de [Anthropic Console](https://console.anthropic.com) een maandlimiet in voor je uitgaven. Dat is de enige harde grens: wie het echt wil, kan de adrescontrole omzeilen.

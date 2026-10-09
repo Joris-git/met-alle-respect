@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Typ wat je vrouw zegt en krijg eerlijke, onderbouwde tegenargumenten.">
+<meta name="description" content="Typ wat je partner, kind, collega of ouders zeggen en krijg eerlijke, onderbouwde tegenargumenten.">
 <title>Met Alle Respect</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,14 +149,24 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
   <header>
     <div>
       <h1>Met <em>alle</em> respect</h1>
-      <p class="tagline">Typ wat je vrouw zegt. Je krijgt eerlijke, onderbouwde tegenargumenten, plus wat ze wél goed ziet. Heeft ze gewoon gelijk? Dan hoor je dat ook.</p>
+      <p class="tagline">Typ wat je partner, kind, collega of ouders zeggen. Je krijgt eerlijke, onderbouwde tegenargumenten, plus wat de ander wél goed ziet. Heeft de ander gewoon gelijk? Dan hoor je dat ook.</p>
     </div>
   </header>
 
   <div class="grid">
     <form id="form" autocomplete="off">
+      <fieldset class="field" style="border:0;padding:0;margin:0">
+        <legend class="label" style="margin-bottom:8px">Met wie?</legend>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="relatie" id="rel-vrouw" value="vrouw" checked><span>Vrouw</span></label>
+          <label class="chip"><input type="radio" name="relatie" id="rel-man" value="man"><span>Man</span></label>
+          <label class="chip"><input type="radio" name="relatie" id="rel-kind" value="kind"><span>Kind</span></label>
+          <label class="chip"><input type="radio" name="relatie" id="rel-collega" value="collega"><span>Collega</span></label>
+          <label class="chip"><input type="radio" name="relatie" id="rel-ouders" value="ouders"><span>Ouders</span></label>
+        </div>
+      </fieldset>
       <div class="field">
-        <label for="stelling">Wat zegt ze?</label>
+        <label for="stelling" id="stelling-label">Wat zegt je vrouw?</label>
         <textarea id="stelling" required placeholder="Bijv.: We moeten de verwarming 's nachts helemaal uitzetten, dat scheelt een hoop geld."></textarea>
       </div>
       <div class="field">
@@ -211,10 +221,11 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     input: {
       stelling: "We moeten de verwarming 's nachts helemaal uitzetten, dat scheelt een hoop geld.",
       context: "Tussenwoning uit 1985, cv-ketel op gas, redelijk geïsoleerd.",
-      standpunt: "Ik denk dat 15 graden beter is dan helemaal uit."
+      standpunt: "Ik denk dat 15 graden beter is dan helemaal uit.",
+      relatie: "vrouw"
     },
     result: {
-      haar_gelijk: 60,
+      ander_gelijk: 60,
       oordeel: "Ze heeft gelijk dat 's nachts lager zetten geld bespaart. Helemaal uitzetten levert ten opzichte van een paar graden lager weinig extra op, en heeft nadelen.",
       erkenning: "Bij een gasketel bespaart een lagere nachttemperatuur echt energie: hoe kleiner het verschil tussen binnen en buiten, hoe minder warmte er weglekt. Haar idee om 's nachts niet door te stoken klopt.",
       argumenten: [
@@ -254,17 +265,27 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
   // ---- helpers ----
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const str = (v) => (typeof v === "string" ? v.trim() : "");
-  function fillForm(i) { $("stelling").value = i.stelling || ""; $("context").value = i.context || ""; $("standpunt").value = i.standpunt || ""; }
+  function fillForm(i) {
+    $("stelling").value = i.stelling || ""; $("context").value = i.context || ""; $("standpunt").value = i.standpunt || "";
+    const radio = $("rel-" + (i.relatie || "vrouw")); if (radio) radio.checked = true;
+    updateLabel();
+  }
+  const rel = (key) => RELATIES[key] || RELATIES.vrouw;
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  function currentRelatie() { return (form.querySelector('input[name="relatie"]:checked') || {}).value || "vrouw"; }
+  function updateLabel() { const R = rel(currentRelatie()); $("stelling-label").textContent = "Wat " + R.zegt + " " + R.wie + "?"; }
+  form.querySelectorAll('input[name="relatie"]').forEach((r) => r.addEventListener("change", updateLabel));
   function setStatus(msg, isErr) { statusEl.textContent = msg || ""; statusEl.classList.toggle("err", !!isErr); }
 
   // ---- render ----
   function render(r, input, isExample) {
     out.replaceChildren();
-    const pct = Math.max(0, Math.min(100, Math.round(Number(r.haar_gelijk) || 0)));
+    const pct = Math.max(0, Math.min(100, Math.round(Number(r.ander_gelijk ?? r.haar_gelijk) || 0)));
+    const R = rel(input.relatie);
 
     const head = el("div", "result-head");
     const hl = el("div");
-    hl.append(el("span", "label", "Haar stelling"));
+    hl.append(el("span", "label", "Wat " + R.wie + " " + R.zegt));
     hl.append(el("p", "quote", "“" + str(input.stelling) + "”"));
     head.append(hl);
     if (isExample) head.append(el("span", "badge", "Voorbeeld"));
@@ -273,8 +294,8 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     // balance
     const scale = el("div", "scale");
     const ends = el("div", "scale-ends");
-    ends.append(el("span", "her", "Zij heeft gelijk · " + pct + "%"), el("span", "you", (100 - pct) + "% · Jij hebt een punt"));
-    const bar = el("div", "bar"); bar.setAttribute("role", "img"); bar.setAttribute("aria-label", "Zij " + pct + " procent, jij " + (100 - pct) + " procent");
+    ends.append(el("span", "her", cap(R.wie) + " " + R.heeft + " gelijk · " + pct + "%"), el("span", "you", (100 - pct) + "% · Jij hebt een punt"));
+    const bar = el("div", "bar"); bar.setAttribute("role", "img"); bar.setAttribute("aria-label", cap(R.wie) + " " + pct + " procent, jij " + (100 - pct) + " procent");
     const fill = el("div", "bar-fill"); fill.style.width = "50%"; bar.append(fill);
     const ticks = el("div", "ticks"); ["0", "25", "50", "75", "100"].forEach((t) => ticks.append(el("span", null, t)));
     scale.append(ends, bar, ticks, el("p", "verdict", str(r.oordeel)));
@@ -284,7 +305,7 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     // acknowledgement
     if (str(r.erkenning)) {
       const ack = el("div", "block ack");
-      ack.append(el("h2", null, "Waar ze gelijk in heeft"), el("p", null, str(r.erkenning)));
+      ack.append(el("h2", null, "Waar " + R.wie + " gelijk in " + R.heeft), el("p", null, str(r.erkenning)));
       out.append(ack);
     }
 
@@ -362,26 +383,37 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     out.append(t);
   }
 
-  // ---- prompt (staat ook in worker/worker.js; pas ze samen aan) ----
+  const RELATIES = {
+    vrouw: { wie: "je vrouw", zegt: "zegt", heeft: "heeft", omschrijving: "de vrouw van de gebruiker", regel: "Het gaat om een partner: gelijkwaardig en liefdevol." },
+    man: { wie: "je man", zegt: "zegt", heeft: "heeft", omschrijving: "de man van de gebruiker", regel: "Het gaat om een partner: gelijkwaardig en liefdevol." },
+    kind: { wie: "je kind", zegt: "zegt", heeft: "heeft", omschrijving: "een kind van de gebruiker", regel: "Het gaat om een kind van de gebruiker. Schrijf 'zin' en 'vraag' in taal die bij een kind past en houd rekening met de leeftijd als die in de context staat. De gebruiker blijft als ouder duidelijk, maar neemt het kind serieus." },
+    collega: { wie: "je collega", zegt: "zegt", heeft: "heeft", omschrijving: "een collega van de gebruiker", regel: "Het gaat om een collega: professioneel en collegiaal. Houd rekening met de werkverhouding." },
+    ouders: { wie: "je ouders", zegt: "zeggen", heeft: "hebben", omschrijving: "de ouders van de gebruiker", regel: "Het gaat om de ouders van de gebruiker: respectvol, met begrip voor hun ervaring. Spreek ze in 'zin' en 'vraag' aan met 'jullie'." }
+  };
+
+  // Staat zowel in index.html als in worker/worker.js; pas ze samen aan.
   function buildPrompt(i) {
+    const r = RELATIES[i.relatie] || RELATIES.vrouw;
     return [
-      "Je helpt een man om respectvol en goed onderbouwd tegengas te geven aan iets wat zijn vrouw zegt. Het doel is een beter gesprek, niet winnen.",
+      "Je helpt iemand om respectvol en goed onderbouwd tegengas te geven aan iets wat " + r.omschrijving + " " + r.zegt + ". Hieronder heet die persoon of dat stel 'de ander'. Het doel is een beter gesprek, niet winnen.",
       "",
       "Regels:",
       "- Schrijf in natuurlijk, helder Nederlands. Toon: " + i.toon + ".",
-      "- Wees eerlijk. Heeft zij grotendeels gelijk, zeg dat dan duidelijk en zet haar_gelijk hoog. Geef dan alsnog de beste tegenargumenten, maar markeer ze eerlijk als 'zwak' of 'redelijk'.",
-      "- Begin met wat er klopt aan haar standpunt (sterkste versie van haar argument).",
+      "- " + r.regel,
+      "- Wees eerlijk. Heeft de ander grotendeels gelijk, zeg dat dan duidelijk en zet ander_gelijk hoog. Geef dan alsnog de beste tegenargumenten, maar markeer ze eerlijk als 'zwak' of 'redelijk'.",
+      "- Begin met wat er klopt aan het standpunt van de ander (de sterkste versie van dat argument).",
       "- Onderbouw elk tegenargument met logica, algemeen bekende feiten of praktijkervaring. Verzin geen studies, bronnen, namen of precieze cijfers. Ben je ergens niet zeker van, zeg dat.",
-      "- Geen manipulatie, geen sarcasme, geen kleinerende taal, geen 'je bent emotioneel'. Zij is een gelijkwaardige gesprekspartner.",
+      "- Geen manipulatie, geen sarcasme, geen kleinerende taal, geen 'je bent emotioneel'. Neem de ander serieus.",
       "- Gaat het eigenlijk over gevoelens of behoeften in plaats van feiten, benoem dat in 'valkuil' of 'vraag'.",
-      "- 'zin' is één tot drie zinnen die hij letterlijk kan zeggen, in de ik-vorm, tegen haar (je/jij).",
+      "- Schrijf 'oordeel', 'erkenning', 'valkuil' en 'nachecken' gericht aan de gebruiker (je/jij) en noem de ander '" + r.wie + "'.",
+      "- 'zin' is één tot drie zinnen die de gebruiker letterlijk kan zeggen, in de ik-vorm, gericht aan de ander.",
       "",
-      "Wat zij zegt: " + i.stelling,
+      "Wat de ander " + r.zegt + ": " + i.stelling,
       i.context ? "Context: " + i.context : "",
-      i.standpunt ? "Wat hij zelf vindt: " + i.standpunt : "",
+      i.standpunt ? "Wat de gebruiker zelf vindt: " + i.standpunt : "",
       "",
       "Antwoord met alleen één JSON-object in deze vorm:",
-      '{"haar_gelijk": 0-100 (geheel getal: hoeveel gelijk zij volgens jou heeft), "oordeel": "1-2 zinnen eerlijk eindoordeel", "erkenning": "wat er klopt aan haar punt", "argumenten": [{"titel": "kort", "uitleg": "1-2 zinnen", "onderbouwing": "waarom dit klopt of waar het op rust", "soort": "feit|logica|praktijk|waarden", "sterkte": "sterk|redelijk|zwak"}] (2 tot 4 stuks), "zin": "wat hij kan zeggen", "vraag": "een oprecht nieuwsgierige vraag aan haar", "valkuil": "wat hij beter niet kan zeggen of doen", "nachecken": ["1 tot 3 dingen om te controleren"]}'
+      '{"ander_gelijk": 0-100 (geheel getal: hoeveel gelijk de ander volgens jou heeft), "oordeel": "1-2 zinnen eerlijk eindoordeel", "erkenning": "wat er klopt aan het punt van de ander", "argumenten": [{"titel": "kort", "uitleg": "1-2 zinnen", "onderbouwing": "waarom dit klopt of waar het op rust", "soort": "feit|logica|praktijk|waarden", "sterkte": "sterk|redelijk|zwak"}] (2 tot 4 stuks), "zin": "wat de gebruiker kan zeggen", "vraag": "een oprecht nieuwsgierige vraag aan de ander", "valkuil": "wat de gebruiker beter niet kan zeggen of doen", "nachecken": ["1 tot 3 dingen om te controleren"]}'
     ].filter((l) => l !== "").join("\n");
   }
 
@@ -452,7 +484,7 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
         method: "POST",
         signal,
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ stelling: input.stelling, context: input.context, standpunt: input.standpunt, toon: input.toon })
+        body: JSON.stringify({ stelling: input.stelling, context: input.context, standpunt: input.standpunt, toon: input.toon, relatie: input.relatie })
       });
     } catch (e) {
       if (e && e.name === "AbortError") throw { code: "cancelled" };
@@ -481,7 +513,8 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
       stelling: $("stelling").value.trim(),
       context: $("context").value.trim(),
       standpunt: $("standpunt").value.trim(),
-      toon: (form.querySelector('input[name="toon"]:checked') || {}).value || "zacht en warm"
+      toon: (form.querySelector('input[name="toon"]:checked') || {}).value || "zacht en warm",
+      relatie: currentRelatie()
     };
     if (!input.stelling) { setStatus("Typ eerst wat ze zegt.", true); $("stelling").focus(); return; }
     if (!sample && !PROXY_URL && !getKey()) { showKeybox(); setStatus(ERR.no_key, true); $("apikey").focus(); return; }

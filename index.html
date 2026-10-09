@@ -157,15 +157,15 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     <form id="form" autocomplete="off">
       <div class="field">
         <label for="stelling">Wat zegt ze?</label>
-        <textarea id="stelling" required placeholder="Bijv.: We moeten de verwarming 's nachts helemaal uitzetten."></textarea>
+        <textarea id="stelling" required placeholder="Bijv.: We moeten de verwarming 's nachts helemaal uitzetten, dat scheelt een hoop geld."></textarea>
       </div>
       <div class="field">
         <label for="context">Context <span class="hint">(optioneel)</span></label>
-        <input type="text" id="context" placeholder="Situatie, huis, kinderen, budget…">
+        <input type="text" id="context" placeholder="Bijv.: Tussenwoning uit 1985, cv-ketel op gas, redelijk geïsoleerd.">
       </div>
       <div class="field">
         <label for="standpunt">Wat vind jij? <span class="hint">(optioneel)</span></label>
-        <input type="text" id="standpunt" placeholder="Jouw eigen idee, als je dat al hebt">
+        <input type="text" id="standpunt" placeholder="Bijv.: Ik denk dat 15 graden beter is dan helemaal uit.">
       </div>
       <fieldset class="field" style="border:0;padding:0;margin:0">
         <legend class="label" style="margin-bottom:8px">Toon</legend>
@@ -515,7 +515,6 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
   stopBtn.addEventListener("click", () => ctl && ctl.abort());
 
   // ---- boot ----
-  fillForm(EXAMPLE.input);
   render(EXAMPLE.result, EXAMPLE.input, true);
   renderHistory();
   if (window.claude && typeof window.claude.use === "function") {

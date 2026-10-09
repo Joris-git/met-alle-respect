@@ -203,6 +203,8 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
   const $ = (id) => document.getElementById(id);
   const form = $("form"), go = $("go"), stopBtn = $("stop"), statusEl = $("status"), out = $("result");
   const HKEY = "mar-history-v1";
+  // Adres van de tussenserver (worker/worker.js). Leeg = bezoekers vullen een eigen API-sleutel in.
+  const PROXY_URL = "";
   let sample = null, ctl = null, blocked = false;
 
   const EXAMPLE = {
@@ -360,7 +362,7 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     out.append(t);
   }
 
-  // ---- prompt ----
+  // ---- prompt (staat ook in worker/worker.js; pas ze samen aan) ----
   function buildPrompt(i) {
     return [
       "Je helpt een man om respectvol en goed onderbouwd tegengas te geven aan iets wat zijn vrouw zegt. Het doel is een beter gesprek, niet winnen.",
@@ -393,7 +395,9 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     prompt_too_large: "De tekst is te lang. Kort hem wat in.",
     empty_completion: "Er kwam geen antwoord. Formuleer de stelling iets concreter.",
     no_key: "Vul eerst je Anthropic API-sleutel in en klik op Bewaar.",
-    bad_key: "Deze API-sleutel werkt niet. Controleer hem op console.anthropic.com."
+    bad_key: "Deze API-sleutel werkt niet. Controleer hem op console.anthropic.com.",
+    not_configured: "De server is nog niet klaar: de API-sleutel ontbreekt in Cloudflare.",
+    forbidden: "De server accepteert geen verzoeken van dit adres."
   };
 
   // ---- direct API (when not running inside Claude) ----
@@ -441,7 +445,26 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     if (!text.trim()) throw { code: "empty_completion" };
     return parseJson(text);
   }
+  async function askProxy(input, signal) {
+    let res;
+    try {
+      res = await fetch(PROXY_URL, {
+        method: "POST",
+        signal,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ stelling: input.stelling, context: input.context, standpunt: input.standpunt, toon: input.toon })
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") throw { code: "cancelled" };
+      throw { code: "upstream_error" };
+    }
+    let data = null;
+    try { data = await res.json(); } catch {}
+    if (!res.ok) throw { code: (data && data.error) || "upstream_error" };
+    return data;
+  }
   function showKeybox() {
+    if (PROXY_URL) return;
     $("keybox").hidden = false;
     $("apikey").value = getKey();
   }
@@ -461,7 +484,7 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
       toon: (form.querySelector('input[name="toon"]:checked') || {}).value || "zacht en warm"
     };
     if (!input.stelling) { setStatus("Typ eerst wat ze zegt.", true); $("stelling").focus(); return; }
-    if (!sample && !getKey()) { showKeybox(); setStatus(ERR.no_key, true); $("apikey").focus(); return; }
+    if (!sample && !PROXY_URL && !getKey()) { showKeybox(); setStatus(ERR.no_key, true); $("apikey").focus(); return; }
 
     ctl = new AbortController();
     go.disabled = true; stopBtn.hidden = false;
@@ -470,7 +493,9 @@ button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid t
     try {
       const r = sample
         ? await sample.json(buildPrompt(input), { signal: ctl.signal, cache: false })
-        : await askApi(buildPrompt(input), ctl.signal);
+        : PROXY_URL
+          ? await askProxy(input, ctl.signal)
+          : await askApi(buildPrompt(input), ctl.signal);
       if (!r || typeof r !== "object" || !Array.isArray(r.argumenten)) throw { code: "invalid_json" };
       render(r, input, false);
       setStatus("");
